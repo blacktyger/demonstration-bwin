@@ -1,13 +1,13 @@
-import datetime
-
 from webdriver_manager.chrome import ChromeDriverManager
 from scrapy.loader import ItemLoader
 from selenium import webdriver
 from scrapy import Spider
+import datetime
 
 from ..items import EventItem
 from .. import tools
 from .. import paths
+
 
 class TennisSpider(Spider):
     name = "tennis"
@@ -19,6 +19,7 @@ class TennisSpider(Spider):
         self.driver = webdriver.Chrome(ChromeDriverManager().install())
 
     def parse(self, response, **kwargs):
+        """Main scrapy logic is here"""
         content = tools.load_full_content(driver=self.driver, url=response.url)
         res = response.replace(body=content)
         self.driver.close()
@@ -26,27 +27,29 @@ class TennisSpider(Spider):
         tournaments = res.css('ms-event-group')
 
         for t in tournaments:
-            t_name = tools.extract_name(t.css('div div span::text').get())
+            t_name = tools.t_name_parser(t.css('div div span::text').get())
             for e in t.css('ms-event'):
                 loader = ItemLoader(item=EventItem(), selector=e)
-                players = e.css('div.participant::text').getall()
-                start_date = e.css('ms-prematch-timer::text').get()
-                odds = e.css('ms-font-resizer::text').getall()
-                lastUpdate = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
-                event_name, player1, player2 = tools.players_parser(players)
 
-                loader.add_value('tournament', t_name)
-                loader.add_value('eventName', event_name)
-                loader.add_value('player1', player1)
-                loader.add_value('player2', player2)
+                start_date = e.css('ms-prematch-timer::text').get()
+                start_soon = e.css('ms-prematch-timer b::text').get()
+                players = e.css('div.participant::text').getall()
+                odds = e.css('ms-font-resizer::text').getall()
+
+                e_name, player1, player2 = tools.players_parser(players)
+                last_update = tools.update_parser(tools.get_now_utc())
+                full_date = tools.event_date_parser(start_date, start_soon)
+
+                loader.add_value('lastUpdate', last_update)
+                loader.add_value('eventDate', full_date)
                 loader.add_value('player1_odds', odds)
                 loader.add_value('player2_odds', odds)
-                loader.add_value('eventDate', start_date)
-                loader.add_value('lastUpdate', lastUpdate)
+                loader.add_value('tournament', t_name)
+                loader.add_value('eventName', e_name)
+                loader.add_value('player1', player1)
+                loader.add_value('player2', player2)
 
-                # Do not save events already started/live
+                # Save only events not started/live yet
                 if start_date:
                     yield loader.load_item()
-
-
 
