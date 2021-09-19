@@ -19,7 +19,7 @@ def load_full_content(driver, url, scroll_times=5):
     actions = ActionChains(driver)
 
     # Wait until bottom element is visible and clickable to scroll down
-    WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, paths.MORE_ITEMS))).click()
+    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, paths.MORE_ITEMS)))
     more_items = driver.find_element_by_xpath(paths.MORE_ITEMS)
 
     def check_popup():
