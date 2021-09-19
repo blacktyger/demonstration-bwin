@@ -6,6 +6,7 @@ from selenium import webdriver
 
 user_agent = '--user-agent="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0"'
 
+
 def firefox_driver():
     options = FirefoxOptions()
     options.add_argument("--headless")
@@ -27,7 +28,6 @@ def firefox_driver():
 def chrome_driver():
     # Selenium webdrive settings
     options = ChromeOptions()
-    options.add_argument("--headless")
     options.add_argument(f'user-agent={user_agent}')
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-extensions")

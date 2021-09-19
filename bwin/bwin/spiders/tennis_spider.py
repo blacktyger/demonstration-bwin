@@ -1,10 +1,10 @@
 from scrapy.loader import ItemLoader
 from scrapy import Spider
 
-from ..items import EventItem
-from .. import webdrivers
-from .. import tools
-from .. import paths
+from bwin.items import EventItem
+from bwin import webdrivers
+from bwin import tools
+from bwin import paths
 
 
 class TennisSpider(Spider):
@@ -13,6 +13,7 @@ class TennisSpider(Spider):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        # self.driver = webdrivers.firefox_driver()
         self.driver = webdrivers.chrome_driver()
 
     def parse(self, response, **kwargs):
@@ -20,9 +21,9 @@ class TennisSpider(Spider):
         content = tools.load_full_content(driver=self.driver, url=response.url)
         res = response.replace(body=content)
         rejected = []
-        accepted = []
+        completed = []
+        raw_dates = []
         tournaments = res.css('ms-event-group')
-        all_events = res.xpath(paths.ALL_EVENTS_COUNT).get()
 
         for t in tournaments:
             for e in t.css('ms-event'):  # for e in events
@@ -33,6 +34,7 @@ class TennisSpider(Spider):
                 start_soon = e.css('ms-prematch-timer b::text').get()
                 start_date = e.css('ms-prematch-timer::text').get()
 
+                # Parsing collected data
                 last_update = tools.convert_dt_to_str(tools.get_now_utc())
                 ready_odds = [tools.odds_parser(x) for x in [p1_odds, p2_odds]]
                 full_date = tools.date_parser(start_date, start_soon)
@@ -49,7 +51,7 @@ class TennisSpider(Spider):
                           'eventDate': full_date,
                           'lastUpdate': last_update}
 
-                # If all values are complete save file,
+                # If all values are complete save to file,
                 # otherwise append to rejected list for feedback
                 loader = ItemLoader(item=EventItem(), selector=e)
 
@@ -60,7 +62,15 @@ class TennisSpider(Spider):
                         rejected.append(values)
                         break
                 if values not in rejected:
-                    accepted.append(values)
+                    completed.append(values)
                     yield loader.load_item()
+
+        all_events = res.xpath(paths.ALL_EVENTS_COUNT).get()
+        outrights = res.xpath(paths.OUTRIGHTS).get()
+        to_scrape = int(all_events) - int(outrights)
+
+        self.crawler.stats.set_value('to_scrape', to_scrape)
+        self.crawler.stats.set_value('rejected', len(rejected))
+        self.crawler.stats.set_value('completed', len(completed))
 
         self.driver.close()

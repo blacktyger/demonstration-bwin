@@ -10,7 +10,7 @@ import tzlocal
 import pytz
 import time
 
-from . import paths
+from bwin import paths
 
 
 def load_full_content(driver, url, scroll_times=5):
@@ -83,32 +83,42 @@ def odds_parser(data):
 def date_parser(data, data2=None):
     """Get machine local tz, parse dates from page and convert to UTC tz"""
     # Sometimes page is dividing event date in to 2 elements, join them here
-    data = f"{data}{data2}"
+    if data2:
+        data = f"{data}{data2}"
 
     # Get local tz and set desired output tz
     local_tz = pytz.timezone(tzlocal.get_localzone().key)
     output_tz = pytz.timezone('UTC')
 
-    # There are 2 types of event dates, we have to use different parsing
-    if any(x in data for x in ['Tomorrow', 'Today']):
-        # Convert variety of strings dates in to timestring objects
-        # thanks to timestring package (https://pypi.org/project/timestring/)
-        # and convert them to standard python datetime objects
-        date = Date(data.replace('/', ''))
-        date_dt = datetime.fromtimestamp(date.to_unixtime(), tz=local_tz)
-        date_dt = date_dt.astimezone(output_tz)
-    elif 'Starting' in data:
-        if 'Starting now' in data:
-            # Event already started, reject it
-            return None
-        # Calculate timedelta for upcoming events and convert tz's
-        minutes_left = int(data.split(' ')[-2])
-        now = datetime.now(tz=local_tz)
-        date_dt = (now + timedelta(minutes=minutes_left)).astimezone(output_tz)
-    else:
-        # Something went wrong
-        date_dt = None
-    return convert_dt_to_str(date_dt)
+    if data:
+        # There are 3 types of event dates, we have to use different parsing
+        if any(x in data for x in ['Tomorrow', 'Today']):
+            # Convert variety of strings dates in to timestring objects
+            # thanks to timestring package (https://pypi.org/project/timestring/)
+            # and convert them to standard python datetime objects
+            date = Date(data.replace('/', ''))
+            date_dt = datetime.fromtimestamp(date.to_unixtime())
+        elif 'Starting' in data:
+            if 'Starting now' in data:
+                # Event already started, reject it
+                return None
+            # Calculate timedelta for upcoming events and convert tz's
+            minutes_left = int(data.split(' ')[-2])
+            now = datetime.now(tz=local_tz)
+            date_dt = now + timedelta(minutes=minutes_left)
+        else:
+            try:
+                # with open('data.txt', 'a') as f:
+                #     f.write(str(data))
+                #     f.write('\n')
+                date_dt = datetime.strptime(data, '%m/%d/%y %I:%M %p')
+            except Exception:
+                return None
+
+        date_dt = date_dt.astimezone(tz=local_tz)
+        date_dt = date_dt.astimezone(tz=output_tz)
+
+        return convert_dt_to_str(date_dt)
 
 
 def players_parser(data):
