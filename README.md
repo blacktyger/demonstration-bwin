@@ -4,7 +4,7 @@ Project goal: scrape all of the tennis match odds available on the https://sport
 ### tools:
 * Python 3.9
 * Scrappy framework (https://scrapy.org/)
-* Selenium web-drive
+* Selenium web-drive (https://pypi.org/project/selenium/)
 * IDE PyCharm
 * Multiple Python libraries (requirements.txt)
 
@@ -14,24 +14,27 @@ Following scrapy framework structure most code is written in:
 - bwin\bwin\items.py
 - bwin\bwin\tools.py
 
-###running:
+### running:
 In order ro run script and save data to json file:
  
 <code>cd bwin </code>
 
 <code>scrapy crawl tennis -o file.json</code>
 
-
-
-
+<code>file.json</code> with content should appear inside /bwin directory
 
 ### considerations:
 * Since there is no available free API to get data from bwin.com
 I decided to scrape it with scrapy as it is described as the fastest scraping framework for python.
-I did some test on my own and indeed beautifulsoap4 was way slower
+I did some test on my own and indeed beautifulsoap4 was way slower. Runtime bottleneck in my script 
+is time to load full content (scrolling + waiting)
 
 * Another challenge is dynamically loaded content via JS and modern front-end frameworks,
 to overcome that script is using Selenium, once scrappy spider starts crawling it will run 
 webdriver to perform actions like scrolling and clicking in order to load full page, 
 then return that content back to scrappy where extracting data will happen.
-
+#
+### summary:
+* Writing this code took me 12-15h
+* Tested on Windows 10 64bit and Ubuntu 64bit.
+* It was my first time with Scrapy and scraping dynamically loaded content from page

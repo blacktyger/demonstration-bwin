@@ -2,7 +2,11 @@
   <dictionary name="IOPDG">
     <words>
       <w>middlewares</w>
+      <w>prec</w>
+      <w>prematch</w>
+      <w>resizer</w>
       <w>scrapy</w>
+      <w>timestring</w>
     </words>
   </dictionary>
 </component>
