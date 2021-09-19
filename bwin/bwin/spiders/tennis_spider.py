@@ -22,7 +22,6 @@ class TennisSpider(Spider):
         res = response.replace(body=content)
         rejected = []
         completed = []
-        raw_dates = []
         tournaments = res.css('ms-event-group')
 
         for t in tournaments:
@@ -65,6 +64,7 @@ class TennisSpider(Spider):
                     completed.append(values)
                     yield loader.load_item()
 
+        # Compare number of events on page vs scrapped events
         all_events = res.xpath(paths.ALL_EVENTS_COUNT).get()
         outrights = res.xpath(paths.OUTRIGHTS).get()
         to_scrape = int(all_events) - int(outrights)

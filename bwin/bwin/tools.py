@@ -108,13 +108,12 @@ def date_parser(data, data2=None):
             date_dt = now + timedelta(minutes=minutes_left)
         else:
             try:
-                # with open('data.txt', 'a') as f:
-                #     f.write(str(data))
-                #     f.write('\n')
+                # Create datetime object from formatted string
                 date_dt = datetime.strptime(data, '%m/%d/%y %I:%M %p')
             except Exception:
                 return None
 
+        # Localize datetime objects and convert to output_tz
         date_dt = date_dt.astimezone(tz=local_tz)
         date_dt = date_dt.astimezone(tz=output_tz)
 
