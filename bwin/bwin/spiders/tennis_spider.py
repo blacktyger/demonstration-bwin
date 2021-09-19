@@ -72,5 +72,4 @@ class TennisSpider(Spider):
         self.crawler.stats.set_value('to_scrape', to_scrape)
         self.crawler.stats.set_value('rejected', len(rejected))
         self.crawler.stats.set_value('completed', len(completed))
-
         self.driver.close()
