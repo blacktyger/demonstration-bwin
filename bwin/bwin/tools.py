@@ -1,32 +1,26 @@
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
 from datetime import datetime, timezone, timedelta
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.wait import WebDriverWait
 from timestring import Date
 from decimal import *
 import tzlocal
 import pytz
 import time
 
-from twisted.conch.telnet import EC
-
 from . import paths
 
-def load_full_content(driver, url, scroll_times=3):
+
+def load_full_content(driver, url, scroll_times=5):
     """Perform certain operations on loaded page to get its full content"""
     driver.get(url)
-    # driver.implicitly_wait(time_to_wait=10)
     actions = ActionChains(driver)
 
-    # Try to find loading element on page, if false no need to scroll
-    try:
-        more_items = driver.find_element_by_xpath(paths.MORE_ITEMS)
-
-    except NoSuchElementException:
-        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, paths.MORE_ITEMS))).click()
-        more_items = driver.find_element_by_xpath(paths.MORE_ITEMS)
+    # Wait until bottom element is visible and clickable to scroll down
+    WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, paths.MORE_ITEMS))).click()
+    more_items = driver.find_element_by_xpath(paths.MORE_ITEMS)
 
     def check_popup():
         """Check if cookie div appeared and close if true"""
@@ -35,7 +29,7 @@ def load_full_content(driver, url, scroll_times=3):
             popup_btn = driver.find_element_by_xpath(paths.POPUP_BTN)
             if popup.is_displayed():
                 popup_btn.click()
-        except NoSuchElementException:
+        except (NoSuchElementException, ElementNotInteractableException):
             pass
 
     # In order to load all tennis matches, script have
@@ -105,6 +99,7 @@ def date_parser(data, data2=None):
         date_dt = date_dt.astimezone(output_tz)
     elif 'Starting' in data:
         if 'Starting now' in data:
+            # Event already started, reject it
             return None
         # Calculate timedelta for upcoming events and convert tz's
         minutes_left = int(data.split(' ')[-2])
@@ -113,10 +108,6 @@ def date_parser(data, data2=None):
     else:
         # Something went wrong
         date_dt = None
-        print(f"\n"
-                    f"\n"
-                    f"-----------------  {data}"
-                    f"\n")
     return convert_dt_to_str(date_dt)
 
 

@@ -33,8 +33,14 @@ is time to load full content (scrolling + waiting)
 to overcome that script is using Selenium, once scrappy spider starts crawling it will run 
 webdriver to perform actions like scrolling and clicking in order to load full page, 
 then return that content back to scrappy where extracting data will happen.
+
+* JSON file will store only results where all values are present - complete, incomplete
+rows are stored in list for testing purposes
+
+* After script execution there is basic summary shown in console (number of scraped items, elapsed time etc)
 #
 ### summary:
 * Writing this code took me 12-15h
 * Tested on Windows 10 64bit and Ubuntu 64bit.
+* Working with Chrome and Firefox  Selenium drivers
 * It was my first time with Scrapy and scraping dynamically loaded content from page

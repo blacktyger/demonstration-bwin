@@ -1,32 +1,10 @@
-from selenium.webdriver import DesiredCapabilities
-from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from selenium.webdriver.chrome.options import Options as ChromeOptions
-from webdriver_manager.chrome import ChromeDriverManager
-from webdriver_manager.firefox import GeckoDriverManager
-from selenium import webdriver
-
 from scrapy.loader import ItemLoader
 from scrapy import Spider
 
 from ..items import EventItem
+from .. import webdrivers
 from .. import tools
 from .. import paths
-
-# Selenium webdrive settings
-options = ChromeOptions()
-options.add_argument("--headless")
-# options.add_argument(f'user-agent={user_agent}')
-options.add_argument("--window-size=1920,1080")
-options.add_argument("--disable-extensions")
-options.add_argument("--proxy-server='direct://'")
-options.add_argument("--proxy-bypass-list=*")
-options.add_argument("--start-maximized")
-options.add_argument('--headless')
-options.add_argument('--disable-gpu')
-options.add_argument('--disable-dev-shm-usage')
-options.add_argument('--no-sandbox')
-options.add_argument('--ignore-certificate-errors')
-driver = webdriver.Chrome(executable_path=ChromeDriverManager().install(), options=options)
 
 
 class TennisSpider(Spider):
@@ -35,8 +13,7 @@ class TennisSpider(Spider):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # Initialize selenium webdriver through https://pypi.org/project/webdriver-manager/
-        self.driver = driver
+        self.driver = webdrivers.chrome_driver()
 
     def parse(self, response, **kwargs):
         """Main scrapy logic is here"""
@@ -45,17 +22,16 @@ class TennisSpider(Spider):
         rejected = []
         accepted = []
         tournaments = res.css('ms-event-group')
+        all_events = res.xpath(paths.ALL_EVENTS_COUNT).get()
 
         for t in tournaments:
             for e in t.css('ms-event'):  # for e in events
-                loader = ItemLoader(item=EventItem(), selector=e)
-
-                start_soon = e.css('ms-prematch-timer b::text').get()
-                start_date = e.css('ms-prematch-timer::text').get()
-                players = e.css('div.participant::text').getall()
                 odds = e.css('ms-option-group')
                 p1_odds = odds.xpath(paths.P1_ODDS).get()
                 p2_odds = odds.xpath(paths.P2_ODDS).get()
+                players = e.css('div.participant::text').getall()
+                start_soon = e.css('ms-prematch-timer b::text').get()
+                start_date = e.css('ms-prematch-timer::text').get()
 
                 last_update = tools.convert_dt_to_str(tools.get_now_utc())
                 ready_odds = [tools.odds_parser(x) for x in [p1_odds, p2_odds]]
@@ -73,18 +49,18 @@ class TennisSpider(Spider):
                           'eventDate': full_date,
                           'lastUpdate': last_update}
 
+                # If all values are complete save file,
+                # otherwise append to rejected list for feedback
+                loader = ItemLoader(item=EventItem(), selector=e)
+
                 for k, v in values.items():
                     if v:
                         loader.add_value(k, v)
-
                     else:
                         rejected.append(values)
-                        yield print(values)
                         break
                 if values not in rejected:
                     accepted.append(values)
                     yield loader.load_item()
-
-        yield print(f"ACCEPTED: {len(accepted)} | REJECTED {len(rejected)}")
 
         self.driver.close()
