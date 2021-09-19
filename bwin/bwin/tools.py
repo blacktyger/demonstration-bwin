@@ -1,51 +1,59 @@
 from selenium.common.exceptions import NoSuchElementException
 from datetime import datetime, timezone, timedelta
 from selenium.webdriver import ActionChains
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
 from timestring import Date
 from decimal import *
 import tzlocal
 import pytz
 import time
 
+from twisted.conch.telnet import EC
+
 from . import paths
 
-def load_full_content(driver, url, scroll_times=5):
+def load_full_content(driver, url, scroll_times=3):
     """Perform certain operations on loaded page to get its full content"""
     driver.get(url)
-    driver.implicitly_wait(time_to_wait=5)
+    # driver.implicitly_wait(time_to_wait=10)
     actions = ActionChains(driver)
-
-    popup = driver.find_element_by_xpath(paths.POPUP)
-    popup_btn = driver.find_element_by_xpath(paths.POPUP_BTN)
 
     # Try to find loading element on page, if false no need to scroll
     try:
-        scroll = driver.find_element_by_xpath(paths.SCROLL)
+        more_items = driver.find_element_by_xpath(paths.MORE_ITEMS)
+
     except NoSuchElementException:
-        scroll = None
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, paths.MORE_ITEMS))).click()
+        more_items = driver.find_element_by_xpath(paths.MORE_ITEMS)
 
     def check_popup():
         """Check if cookie div appeared and close if true"""
-        if popup.is_displayed():
-            popup_btn.click()
+        try:
+            popup = driver.find_element_by_xpath(paths.POPUP)
+            popup_btn = driver.find_element_by_xpath(paths.POPUP_BTN)
+            if popup.is_displayed():
+                popup_btn.click()
+        except NoSuchElementException:
+            pass
 
     # In order to load all tennis matches, script have
     # to scroll down and wait to load more content,
     # each scroll loads up to 50 new events. Try/Except
     # block as sometimes loading element is missing.
-    if scroll:
-        while scroll_times:
-            try:
-                check_popup()
-                # Navigate to bottom element of scrollable div
-                actions.move_to_element(scroll).perform()
-                scroll_times -= 1
-                time.sleep(1.7)
-            except Exception:
-                check_popup()
-                scroll_times -= 1
-                time.sleep(1)
-                continue
+    while scroll_times:
+        try:
+            check_popup()
+            # Navigate to bottom element of scrollable div
+            actions.move_to_element(more_items).perform()
+            scroll_times -= 1
+            time.sleep(0.2)
+        except Exception:
+            check_popup()
+            scroll_times -= 1
+            time.sleep(0.2)
+            continue
     return driver.page_source
 
 
@@ -105,6 +113,10 @@ def date_parser(data, data2=None):
     else:
         # Something went wrong
         date_dt = None
+        print(f"\n"
+                    f"\n"
+                    f"-----------------  {data}"
+                    f"\n")
     return convert_dt_to_str(date_dt)
 
 
