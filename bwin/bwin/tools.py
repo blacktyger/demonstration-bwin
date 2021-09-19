@@ -18,9 +18,13 @@ def load_full_content(driver, url, scroll_times=5):
     driver.get(url)
     actions = ActionChains(driver)
 
-    # Wait until bottom element is visible and clickable to scroll down
-    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, paths.MORE_ITEMS)))
-    more_items = driver.find_element_by_xpath(paths.MORE_ITEMS)
+    # Wait until bottom element is visible to scroll down
+    try:
+        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, paths.MORE_ITEMS)))
+        more_items = driver.find_element_by_xpath(paths.MORE_ITEMS)
+    except Exception:
+        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, paths.MORE_BACKUP)))
+        more_items = driver.find_element_by_xpath(paths.MORE_BACKUP)
 
     def check_popup():
         """Check if cookie div appeared and close if true"""
