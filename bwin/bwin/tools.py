@@ -91,7 +91,8 @@ def date_parser(data, data2=None):
         data = f"{data}{data2}"
 
     if data:
-        # Get local tz and set desired output tz
+        # Get local tz and set desired output tz, I assumed that webpage
+        # will display times in local machine timezone
         local_tz = pytz.timezone(tzlocal.get_localzone().key)
         output_tz = pytz.timezone('UTC')
 
