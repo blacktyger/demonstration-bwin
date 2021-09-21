@@ -37,37 +37,35 @@ class TennisSpider(Spider):
                 last_update = tools.convert_dt_to_str(tools.get_now_utc())
                 ready_odds = [tools.odds_parser(x) for x in [p1_odds, p2_odds]]
                 full_date = tools.date_parser(start_date, start_soon)
-                p1, p2 = tools.players_parser(players)[1:3]
-                e_name = tools.players_parser(players)[0]
                 t_name = tools.t_name_parser(t.css('div div span::text').get())
+                e_name, p1, p2 = tools.players_parser(players)
 
-                values = {'tournament': t_name,
-                          'eventName': e_name,
-                          'player1': p1,
-                          'player2': p2,
-                          'player1_odds': ready_odds[0],
-                          'player2_odds': ready_odds[1],
-                          'eventDate': full_date,
-                          'lastUpdate': last_update}
+                event = {'tournament': t_name,
+                         'eventName': e_name,
+                         'player1': p1,
+                         'player2': p2,
+                         'player1_odds': ready_odds[0],
+                         'player2_odds': ready_odds[1],
+                         'eventDate': full_date,
+                         'lastUpdate': last_update}
 
                 # If all values are complete save to file,
                 # otherwise append to rejected list for feedback
-                loader = ItemLoader(item=EventItem(), selector=e)
-
-                for k, v in values.items():
-                    if v:
+                if (last_update and ready_odds and
+                    full_date and t_name and e_name) is not None:
+                    loader = ItemLoader(item=EventItem(), selector=e)
+                    completed.append(event)
+                    for k, v in event.items():
                         loader.add_value(k, v)
-                    else:
-                        rejected.append(values)
-                        break
-                if values not in rejected:
-                    completed.append(values)
-                    yield loader.load_item()
+                        yield loader.load_item()
+                else:
+                    rejected.append(event)
 
         # Compare number of events on page vs scrapped events
         all_events = res.xpath(paths.ALL_EVENTS_COUNT).get()
         outrights = res.xpath(paths.OUTRIGHTS).get()
-        to_scrape = int(all_events) - int(outrights)
+        specials = res.xpath(paths.SPECIALS).get()
+        to_scrape = int(all_events) - (int(outrights) + int(specials))
 
         self.crawler.stats.set_value('to_scrape', to_scrape)
         self.crawler.stats.set_value('rejected', len(rejected))

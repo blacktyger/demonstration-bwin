@@ -56,12 +56,12 @@ def load_full_content(driver, url, scroll_times=5):
 
 
 def get_now_utc():
-    """return timezone aware datetime object in UTC tz"""
+    """Return timezone aware datetime object in UTC"""
     return datetime.now(tz=timezone.utc)
 
 
 def convert_dt_to_str(data):
-    """Convert datetime object to string and format"""
+    """Convert datetime object to string and format it"""
     if isinstance(data, datetime):
         return data.strftime('%Y-%m-%d %H:%M')
     else:
@@ -74,7 +74,7 @@ def t_name_parser(data):
 
 
 def odds_parser(data):
-    """Convert fractional odds to decimal with Decimal library"""
+    """Convert fractional odds to decimal with python decimal library"""
     try:
         getcontext().prec = 2
         num1, num2 = data.split('/')
@@ -90,15 +90,15 @@ def date_parser(data, data2=None):
     if data2:
         data = f"{data}{data2}"
 
-    # Get local tz and set desired output tz
-    local_tz = pytz.timezone(tzlocal.get_localzone().key)
-    output_tz = pytz.timezone('UTC')
-
     if data:
+        # Get local tz and set desired output tz
+        local_tz = pytz.timezone(tzlocal.get_localzone().key)
+        output_tz = pytz.timezone('UTC')
+
         # There are 3 types of event dates, we have to use different parsing
         if any(x in data for x in ['Tomorrow', 'Today']):
             # Convert variety of strings dates in to timestring objects
-            # thanks to timestring package (https://pypi.org/project/timestring/)
+            # (thanks to timestring package https://pypi.org/project/timestring/)
             # and convert them to standard python datetime objects
             date = Date(data.replace('/', ''))
             date_dt = datetime.fromtimestamp(date.to_unixtime())
@@ -106,6 +106,7 @@ def date_parser(data, data2=None):
             if 'Starting now' in data:
                 # Event already started, reject it
                 return None
+
             # Calculate timedelta for upcoming events and convert tz's
             minutes_left = int(data.split(' ')[-2])
             now = datetime.now(tz=local_tz)

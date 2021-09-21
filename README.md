@@ -9,21 +9,25 @@ Project goal: scrape all of the tennis match odds available on the https://sport
 * Multiple Python libraries (requirements.txt)
 
 ### structure:
-Following scrapy framework structure most code is written in:
+Following scrapy framework structure, most code is written in:
+- bwin\start.py
 - bwin\bwin\spiders\tennis_spider.py
 - bwin\bwin\items.py
 - bwin\bwin\tools.py
+- bwin\bwin\webdrivers.py
 
 ### running:
-In order ro run script and save data to json file:
- 
-<code>cd bwin </code>
 
-<code>scrapy crawl tennis -o file.json</code>
+Quick run and save result to <code>json.file</code>:
 
-<code>file.json</code> with content should appear inside /bwin directory
+<code>python start.py</code> - there will be summary printed at the end
 
-### considerations:
+<code>file.json</code> with content should appear
+
+Standard Scrapy way to start: <code>cd bwin scrapy crawl tennis -o file.json</code>
+
+ considerations
+-
 * Since there is no available free API to get data from bwin.com
 I decided to scrape it with scrapy as it is described as the fastest scraping framework for python.
 I did some test on my own and indeed beautifulsoap4 was way slower. Runtime bottleneck in my script 
